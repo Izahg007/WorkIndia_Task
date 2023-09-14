@@ -46,7 +46,7 @@ exports.loginUser = (req, res) => {
             return res.status(401).json({ status: "Incorrect username/password provided. Please retry", status_code: 401 });
         }
 
-        const token = jwt.sign({ userId: user.user_id, username: user.username, role: user.role }, process.env.SECRET_KEY);
+        const token = jwt.sign({ userId: user.user_id, username: user.username, role: user.role }, process.env.JWT_SECRET);
 
         res.status(200).json({
             status: "Login successful",

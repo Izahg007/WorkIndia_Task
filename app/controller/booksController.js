@@ -1,5 +1,6 @@
 const mysql = require('mysql2');
 const connection = require('../config/db');
+const jwt = require("jsonwebtoken");
 
 // Adding a book endpoint
 exports.addBook = (req, res) => {
@@ -90,3 +91,50 @@ exports.getBookAvailability = (req, res) => {
         });
     });
 }
+
+//borrow a book endpoint
+exports.borrowBook = async (req, res) => {
+    const { book_id, user_id, issue_time, return_time } = req.body;
+
+    try {
+        connection.query(`SELECT * FROM Bookings WHERE book_id = ? AND 
+                          (issue_time <= ? AND return_time >= ?)`,
+        [book_id, return_time, issue_time], (err, results) => {
+            if (err) {
+                throw err;
+            }
+            
+            // If results are found, that means the book is already borrowed in the time frame.
+            if (results.length) {
+                return res.status(400).json({
+                    status: "Book is not available at this moment",
+                    status_code: 400
+                });
+            } else {
+                // Else, book is available and we can proceed to book it for the user.
+                connection.query(`INSERT INTO Bookings (book_id, user_id, issue_time, return_time) 
+                                  VALUES (?, ?, ?, ?)`,
+                [book_id, user_id, issue_time, return_time], (err, results) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    return res.status(200).json({
+                        status: "Book booked successfully",
+                        status_code: 200,
+                        booking_id: results.insertId
+                    });
+                });
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            status: "Error",
+            message: "Server Error."
+        });
+    }
+};
+
+
+
